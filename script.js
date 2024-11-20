@@ -3,17 +3,18 @@ const ctx = canvas.getContext('2d');
 
 let drawing = false;
 let brushSize = document.getElementById('brushSize').value;
-let brushColor = document.getElementById('colorPicker').value;
+let brushColor = document.getElementById('colorPickerSwatch').style.backgroundColor || '#000000';
 
-// Resize the canvas based on the screen size
 function resizeCanvas() {
-  canvas.width = window.innerWidth * 0.8;  // 80% of window width
-  canvas.height = window.innerHeight * 0.6;  // 60% of window height
+  const newWidth = window.innerWidth * 0.6;
+  const newHeight = window.innerHeight * 0.6;
+
+  canvas.width = newWidth;
+  canvas.height = newHeight;
 }
 
-resizeCanvas(); // Initial resize
+resizeCanvas();
 
-// Mouse and touch event listeners for drawing
 canvas.addEventListener('mousedown', startDrawing);
 canvas.addEventListener('mouseup', stopDrawing);
 canvas.addEventListener('mousemove', draw);
@@ -23,28 +24,44 @@ canvas.addEventListener('touchstart', startDrawing);
 canvas.addEventListener('touchend', stopDrawing);
 canvas.addEventListener('touchmove', drawTouch);
 
-// Brush size and color event listeners
 document.getElementById('brushSize').addEventListener('input', (e) => {
   brushSize = e.target.value;
 });
 
-document.getElementById('colorPicker').addEventListener('input', (e) => {
-  brushColor = e.target.value;
-});
-
-// Clear canvas event listener
 document.getElementById('clearCanvasButton').addEventListener('click', () => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 });
 
-// Theme toggle event listener
 document.getElementById('themeToggleButton').addEventListener('click', () => {
   document.body.classList.toggle('dark');
 });
 
-// Changelog button event listener
 document.getElementById('changelogButton').addEventListener('click', () => {
   window.open('https://yourwebsite.com/changelog', '_blank');
+});
+
+const colorPickerSwatch = document.getElementById('colorPickerSwatch');
+
+colorPickerSwatch.addEventListener('click', () => {
+  const colorPicker = document.createElement('input');
+  colorPicker.setAttribute('type', 'color');
+  colorPicker.setAttribute('style', 'position: absolute; visibility: hidden;');
+  document.body.appendChild(colorPicker);
+
+  colorPicker.click();
+
+  colorPicker.addEventListener('input', (e) => {
+    brushColor = e.target.value;
+    colorPickerSwatch.style.backgroundColor = brushColor;
+  });
+
+  colorPicker.addEventListener('change', () => {
+    document.body.removeChild(colorPicker);
+  });
+
+  colorPicker.addEventListener('blur', () => {
+    document.body.removeChild(colorPicker);
+  });
 });
 
 function startDrawing(e) {
@@ -57,44 +74,37 @@ function stopDrawing() {
   ctx.beginPath();
 }
 
-// Draw function for mouse events
 function draw(e) {
   if (!drawing) return;
 
-  const rect = canvas.getBoundingClientRect(); // Get canvas position relative to viewport
-  const mouseX = e.clientX - rect.left; // Get mouse X relative to canvas
-  const mouseY = e.clientY - rect.top;  // Get mouse Y relative to canvas
+  const mouseX = e.clientX - canvas.getBoundingClientRect().left;
+  const mouseY = e.clientY - canvas.getBoundingClientRect().top;
 
   ctx.lineWidth = brushSize;
   ctx.lineCap = 'round';
   ctx.strokeStyle = brushColor;
 
-  // Draw line from the last position to the current position
   ctx.lineTo(mouseX, mouseY);
   ctx.stroke();
-  ctx.beginPath(); // Start a new path to continue drawing
-  ctx.moveTo(mouseX, mouseY); // Move the path to the current mouse position
+  ctx.beginPath();
+  ctx.moveTo(mouseX, mouseY);
 }
 
-// Draw function for touch events
 function drawTouch(e) {
   if (!drawing) return;
 
-  const rect = canvas.getBoundingClientRect(); // Get canvas position relative to viewport
   const touch = e.touches[0];
-  const touchX = touch.clientX - rect.left; // Get touch X relative to canvas
-  const touchY = touch.clientY - rect.top;  // Get touch Y relative to canvas
+  const touchX = touch.clientX - canvas.getBoundingClientRect().left;
+  const touchY = touch.clientY - canvas.getBoundingClientRect().top;
 
   ctx.lineWidth = brushSize;
   ctx.lineCap = 'round';
   ctx.strokeStyle = brushColor;
 
-  // Draw line from the last position to the current position
   ctx.lineTo(touchX, touchY);
   ctx.stroke();
-  ctx.beginPath(); // Start a new path to continue drawing
-  ctx.moveTo(touchX, touchY); // Move the path to the current touch position
+  ctx.beginPath();
+  ctx.moveTo(touchX, touchY);
 }
 
-// Resize the canvas whenever the window is resized
 window.addEventListener('resize', resizeCanvas);
