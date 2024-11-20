@@ -34,6 +34,23 @@ footer {
   align-items: center;
 }
 
+.undo {
+  background-color: #87ceeb; /* Sky Blue */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.undo:hover {
+  background-color: #5e99b1; /* Darker blue on hover */
+  transform: scale(1.1); /* Add a scaling animation */
+}
+
+
 /* Canvas */
 canvas {
   background-color: white;
@@ -169,4 +186,5 @@ body.dark input[type="range"] {
 body.dark #colorPickerSwatch {
   border-color: white;
 }
+
 
