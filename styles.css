@@ -85,7 +85,7 @@ button.clear:hover, button.theme:hover, button.changelog:hover {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background-color: red;
+  background-color: rgb(0, 0, 0);
   border: 1px solid #ccc;
   cursor: pointer;
   transition: transform 0.3s ease-in-out, background-color 0.3s;
