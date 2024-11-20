@@ -139,3 +139,4 @@ function redrawCanvas() {
 }
 
 window.addEventListener('resize', resizeCanvas);
+
