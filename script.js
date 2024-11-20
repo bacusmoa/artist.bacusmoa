@@ -37,7 +37,7 @@ document.getElementById('themeToggleButton').addEventListener('click', () => {
 });
 
 document.getElementById('changelogButton').addEventListener('click', () => {
-  window.open('https://yourwebsite.com/changelog', '_blank');
+  window.open('https://changelogs.bacusmoa.com', '_blank');
 });
 
 const colorPickerSwatch = document.getElementById('colorPickerSwatch');
