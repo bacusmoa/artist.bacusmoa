@@ -3,41 +3,84 @@ const ctx = canvas.getContext('2d');
 
 let drawing = false;
 let brushSize = document.getElementById('brushSize').value;
-let brushColor = '#000000';
-const drawingHistory = [];
-let undoIndex = -1;
+let brushColor = '#000000'; // Default color
+let actions = []; // Stack to store all actions
+let currentPath = []; // Stores the current drawing path
 
 function resizeCanvas() {
-  const newWidth = window.innerWidth * 0.6;
-  const newHeight = window.innerHeight * 0.6;
-
-  canvas.width = newWidth;
-  canvas.height = newHeight;
-
-  if (drawingHistory.length > 0) {
-    redrawCanvas();
-  }
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width; // Match the CSS width
+  canvas.height = rect.height; // Match the CSS height
 }
 
 resizeCanvas();
 
-canvas.addEventListener('mousedown', startDrawing);
-canvas.addEventListener('mouseup', stopDrawing);
-canvas.addEventListener('mousemove', draw);
-canvas.addEventListener('mouseout', stopDrawing);
+canvas.addEventListener('mousedown', (e) => {
+  drawing = true;
+  currentPath = [];
+  addPoint(e);
+});
 
-canvas.addEventListener('touchstart', startDrawing);
-canvas.addEventListener('touchend', stopDrawing);
-canvas.addEventListener('touchmove', drawTouch);
+canvas.addEventListener('mouseup', () => {
+  drawing = false;
+  if (currentPath.length > 0) {
+    actions.push([...currentPath]); // Save the current path to actions stack
+  }
+  ctx.beginPath();
+});
+
+canvas.addEventListener('mousemove', draw);
+
+function getMousePos(event) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top,
+  };
+}
+
+function addPoint(event) {
+  const { x, y } = getMousePos(event);
+  currentPath.push({ x, y, color: brushColor, size: brushSize });
+}
+
+function draw(event) {
+  if (!drawing) return;
+  addPoint(event);
+
+  const { x, y } = currentPath[currentPath.length - 1];
+  ctx.lineWidth = brushSize;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = brushColor;
+
+  if (currentPath.length > 1) {
+    const { x: prevX, y: prevY } = currentPath[currentPath.length - 2];
+    ctx.beginPath();
+    ctx.moveTo(prevX, prevY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  }
+}
 
 document.getElementById('brushSize').addEventListener('input', (e) => {
   brushSize = e.target.value;
 });
 
+document.getElementById('colorPickerSwatch').addEventListener('click', () => {
+  const colorPicker = document.createElement('input');
+  colorPicker.type = 'color';
+  colorPicker.style.display = 'none';
+  colorPicker.addEventListener('change', (e) => {
+    brushColor = e.target.value;
+    colorPicker.remove();
+  });
+  document.body.appendChild(colorPicker);
+  colorPicker.click();
+});
+
 document.getElementById('clearCanvasButton').addEventListener('click', () => {
+  actions = []; // Clear all actions
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawingHistory.length = 0;
-  undoIndex = -1;
 });
 
 document.getElementById('themeToggleButton').addEventListener('click', () => {
@@ -48,94 +91,32 @@ document.getElementById('changelogButton').addEventListener('click', () => {
   window.open('https://yourwebsite.com/changelog', '_blank');
 });
 
-document.getElementById('undoButton').addEventListener('click', undoLastAction);
-
-const colorPickerSwatch = document.getElementById('colorPickerSwatch');
-
-colorPickerSwatch.addEventListener('click', () => {
-  const colorPicker = document.createElement('input');
-  colorPicker.setAttribute('type', 'color');
-  colorPicker.setAttribute('style', 'position: absolute; visibility: hidden;');
-  document.body.appendChild(colorPicker);
-
-  colorPicker.click();
-
-  colorPicker.addEventListener('input', (e) => {
-    brushColor = e.target.value;
-    colorPickerSwatch.style.backgroundColor = brushColor;
-  });
-
-  colorPicker.addEventListener('change', () => {
-    document.body.removeChild(colorPicker);
-  });
-
-  colorPicker.addEventListener('blur', () => {
-    document.body.removeChild(colorPicker);
-  });
+document.getElementById('undoButton').addEventListener('click', () => {
+  actions.pop(); // Remove the last action
+  redrawCanvas();
 });
 
-function startDrawing(e) {
-  drawing = true;
-  ctx.beginPath();
-  draw(e);
-}
-
-function stopDrawing() {
-  if (drawing) {
-    drawingHistory.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
-    undoIndex++;
-  }
-  drawing = false;
-  ctx.beginPath();
-}
-
-function draw(e) {
-  if (!drawing) return;
-
-  const mouseX = e.clientX - canvas.getBoundingClientRect().left;
-  const mouseY = e.clientY - canvas.getBoundingClientRect().top;
-
-  ctx.lineWidth = brushSize;
-  ctx.lineCap = 'round';
-  ctx.strokeStyle = brushColor;
-
-  ctx.lineTo(mouseX, mouseY);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(mouseX, mouseY);
-}
-
-function drawTouch(e) {
-  if (!drawing) return;
-
-  const touch = e.touches[0];
-  const touchX = touch.clientX - canvas.getBoundingClientRect().left;
-  const touchY = touch.clientY - canvas.getBoundingClientRect().top;
-
-  ctx.lineWidth = brushSize;
-  ctx.lineCap = 'round';
-  ctx.strokeStyle = brushColor;
-
-  ctx.lineTo(touchX, touchY);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(touchX, touchY);
-}
-
-function undoLastAction() {
-  if (undoIndex > 0) {
-    undoIndex--;
-    ctx.putImageData(drawingHistory[undoIndex], 0, 0);
-  } else if (undoIndex === 0) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    undoIndex--;
-  }
-}
-
 function redrawCanvas() {
-  if (undoIndex >= 0) {
-    ctx.putImageData(drawingHistory[undoIndex], 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (const path of actions) {
+    ctx.beginPath();
+    for (let i = 0; i < path.length; i++) {
+      const { x, y, color, size } = path[i];
+      ctx.strokeStyle = color;
+      ctx.lineWidth = size;
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    ctx.stroke();
   }
 }
 
-window.addEventListener('resize', resizeCanvas);
+window.addEventListener('resize', () => {
+  const prevActions = [...actions];
+  resizeCanvas();
+  actions = prevActions; // Reapply saved actions after resizing
+  redrawCanvas();
+});
