@@ -3,7 +3,9 @@ const ctx = canvas.getContext('2d');
 
 let drawing = false;
 let brushSize = document.getElementById('brushSize').value;
-let brushColor = document.getElementById('colorPickerSwatch').style.backgroundColor || '#000000';
+let brushColor = '#000000';
+const drawingHistory = [];
+let undoIndex = -1;
 
 function resizeCanvas() {
   const newWidth = window.innerWidth * 0.6;
@@ -11,6 +13,10 @@ function resizeCanvas() {
 
   canvas.width = newWidth;
   canvas.height = newHeight;
+
+  if (drawingHistory.length > 0) {
+    redrawCanvas();
+  }
 }
 
 resizeCanvas();
@@ -30,6 +36,8 @@ document.getElementById('brushSize').addEventListener('input', (e) => {
 
 document.getElementById('clearCanvasButton').addEventListener('click', () => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawingHistory.length = 0;
+  undoIndex = -1;
 });
 
 document.getElementById('themeToggleButton').addEventListener('click', () => {
@@ -37,8 +45,10 @@ document.getElementById('themeToggleButton').addEventListener('click', () => {
 });
 
 document.getElementById('changelogButton').addEventListener('click', () => {
-  window.open('https://changelogs.bacusmoa.com', '_blank');
+  window.open('https://yourwebsite.com/changelog', '_blank');
 });
+
+document.getElementById('undoButton').addEventListener('click', undoLastAction);
 
 const colorPickerSwatch = document.getElementById('colorPickerSwatch');
 
@@ -66,10 +76,15 @@ colorPickerSwatch.addEventListener('click', () => {
 
 function startDrawing(e) {
   drawing = true;
+  ctx.beginPath();
   draw(e);
 }
 
 function stopDrawing() {
+  if (drawing) {
+    drawingHistory.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    undoIndex++;
+  }
   drawing = false;
   ctx.beginPath();
 }
@@ -105,6 +120,22 @@ function drawTouch(e) {
   ctx.stroke();
   ctx.beginPath();
   ctx.moveTo(touchX, touchY);
+}
+
+function undoLastAction() {
+  if (undoIndex > 0) {
+    undoIndex--;
+    ctx.putImageData(drawingHistory[undoIndex], 0, 0);
+  } else if (undoIndex === 0) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    undoIndex--;
+  }
+}
+
+function redrawCanvas() {
+  if (undoIndex >= 0) {
+    ctx.putImageData(drawingHistory[undoIndex], 0, 0);
+  }
 }
 
 window.addEventListener('resize', resizeCanvas);
