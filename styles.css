@@ -112,6 +112,17 @@ button.clear:hover, button.theme:hover, button.changelog:hover {
   transform: scale(1.1);
 }
 
+#canvasWrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+canvas {
+  margin-top: 20px;
+}
+
+
 /* Slider Animations */
 input[type="range"] {
   -webkit-appearance: none;
@@ -186,3 +197,5 @@ body.dark input[type="range"] {
 body.dark #colorPickerSwatch {
   border-color: white;
 }
+
+
