@@ -1,122 +1,122 @@
 const canvas = document.getElementById('drawingCanvas');
 const ctx = canvas.getContext('2d');
+const colorPickerSwatch = document.getElementById('colorPickerSwatch');
+const clearCanvasButton = document.getElementById('clearCanvasButton');
+const undoButton = document.getElementById('undoButton');
+const brushSizeInput = document.getElementById('brushSize');
 
-let drawing = false;
-let brushSize = document.getElementById('brushSize').value;
-let brushColor = '#000000'; // Default color
-let actions = []; // Stack to store all actions
-let currentPath = []; // Stores the current drawing path
+let isDrawing = false;
+let brushColor = '#000000';
+let brushSize = 5;
+let actions = []; // Stores complete strokes
+let currentStroke = [];
+let canvasRect;
 
+// Adjust canvas resolution to match its CSS size
 function resizeCanvas() {
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width; // Match the CSS width
-  canvas.height = rect.height; // Match the CSS height
+  const style = getComputedStyle(canvas);
+  const width = parseFloat(style.width); // Get CSS width
+  const height = parseFloat(style.height); // Get CSS height
+
+  canvas.width = width; // Set internal resolution
+  canvas.height = height;
+  canvasRect = canvas.getBoundingClientRect(); // Update bounding rectangle
+  redrawCanvas(); // Redraw canvas to match new resolution
 }
 
-resizeCanvas();
-
-canvas.addEventListener('mousedown', (e) => {
-  drawing = true;
-  currentPath = [];
-  addPoint(e);
-});
-
-canvas.addEventListener('mouseup', () => {
-  drawing = false;
-  if (currentPath.length > 0) {
-    actions.push([...currentPath]); // Save the current path to actions stack
-  }
-  ctx.beginPath();
-});
-
-canvas.addEventListener('mousemove', draw);
-
-function getMousePos(event) {
-  const rect = canvas.getBoundingClientRect();
-  return {
-    x: event.clientX - rect.left,
-    y: event.clientY - rect.top,
-  };
-}
-
-function addPoint(event) {
-  const { x, y } = getMousePos(event);
-  currentPath.push({ x, y, color: brushColor, size: brushSize });
-}
-
-function draw(event) {
-  if (!drawing) return;
-  addPoint(event);
-
-  const { x, y } = currentPath[currentPath.length - 1];
-  ctx.lineWidth = brushSize;
-  ctx.lineCap = 'round';
-  ctx.strokeStyle = brushColor;
-
-  if (currentPath.length > 1) {
-    const { x: prevX, y: prevY } = currentPath[currentPath.length - 2];
+// Redraw the entire canvas based on the `actions` array
+function redrawCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  actions.forEach(stroke => {
+    ctx.strokeStyle = stroke.color;
+    ctx.lineWidth = stroke.size;
     ctx.beginPath();
-    ctx.moveTo(prevX, prevY);
-    ctx.lineTo(x, y);
-    ctx.stroke();
-  }
+    stroke.lines.forEach((line, index) => {
+      if (index === 0) {
+        ctx.moveTo(line.startX, line.startY);
+      }
+      ctx.lineTo(line.endX, line.endY);
+      ctx.stroke();
+    });
+  });
 }
 
-document.getElementById('brushSize').addEventListener('input', (e) => {
+// Clear the canvas and reset actions
+clearCanvasButton.addEventListener('click', () => {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  actions = [];
+});
+
+// Undo the last stroke
+undoButton.addEventListener('click', () => {
+  actions.pop(); // Remove the last stroke
+  redrawCanvas(); // Redraw the canvas
+});
+
+// Change brush size
+brushSizeInput.addEventListener('input', (e) => {
   brushSize = e.target.value;
 });
 
-document.getElementById('colorPickerSwatch').addEventListener('click', () => {
-  const colorPicker = document.createElement('input');
-  colorPicker.type = 'color';
-  colorPicker.style.display = 'none';
-  colorPicker.addEventListener('change', (e) => {
+// Color picker
+colorPickerSwatch.style.backgroundColor = brushColor;
+colorPickerSwatch.addEventListener('click', () => {
+  const input = document.createElement('input');
+  input.type = 'color';
+  input.style.opacity = '0';
+  input.addEventListener('input', (e) => {
     brushColor = e.target.value;
-    colorPicker.remove();
+    colorPickerSwatch.style.backgroundColor = brushColor;
   });
-  document.body.appendChild(colorPicker);
-  colorPicker.click();
+  input.click();
+  input.remove();
 });
 
-document.getElementById('clearCanvasButton').addEventListener('click', () => {
-  actions = []; // Clear all actions
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+// Handle drawing
+canvas.addEventListener('mousedown', (e) => {
+  isDrawing = true;
+  currentStroke = { color: brushColor, size: brushSize, lines: [] };
+
+  const startX = e.clientX - canvasRect.left;
+  const startY = e.clientY - canvasRect.top;
+  currentStroke.lines.push({ startX, startY, endX: startX, endY: startY });
 });
 
-document.getElementById('themeToggleButton').addEventListener('click', () => {
-  document.body.classList.toggle('dark');
+canvas.addEventListener('mousemove', (e) => {
+  if (!isDrawing) return;
+
+  const endX = e.clientX - canvasRect.left;
+  const endY = e.clientY - canvasRect.top;
+  const lastLine = currentStroke.lines[currentStroke.lines.length - 1];
+
+  ctx.beginPath();
+  ctx.strokeStyle = brushColor;
+  ctx.lineWidth = brushSize;
+  ctx.moveTo(lastLine.endX, lastLine.endY);
+  ctx.lineTo(endX, endY);
+  ctx.stroke();
+
+  currentStroke.lines.push({ startX: lastLine.endX, startY: lastLine.endY, endX, endY });
 });
 
-document.getElementById('changelogButton').addEventListener('click', () => {
-  window.open('https://changelogs.bacusmoa.com', '_blank');
-});
-
-document.getElementById('undoButton').addEventListener('click', () => {
-  actions.pop(); // Remove the last action
-  redrawCanvas();
-});
-
-function redrawCanvas() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (const path of actions) {
-    ctx.beginPath();
-    for (let i = 0; i < path.length; i++) {
-      const { x, y, color, size } = path[i];
-      ctx.strokeStyle = color;
-      ctx.lineWidth = size;
-      if (i === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
-      }
-    }
-    ctx.stroke();
+canvas.addEventListener('mouseup', () => {
+  if (isDrawing) {
+    actions.push(currentStroke);
+    currentStroke = [];
   }
-}
-
-window.addEventListener('resize', () => {
-  const prevActions = [...actions];
-  resizeCanvas();
-  actions = prevActions; // Reapply saved actions after resizing
-  redrawCanvas();
+  isDrawing = false;
 });
+
+canvas.addEventListener('mouseout', () => {
+  if (isDrawing) {
+    actions.push(currentStroke);
+    currentStroke = [];
+  }
+  isDrawing = false;
+});
+
+// Resize canvas on window resize
+window.addEventListener('resize', resizeCanvas);
+
+// Initialize canvas size
+resizeCanvas();
