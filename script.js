@@ -99,6 +99,19 @@ canvas.addEventListener('mousemove', (e) => {
   currentStroke.lines.push({ startX: lastLine.endX, startY: lastLine.endY, endX, endY });
 });
 
+// Toggle theme functionality
+document.getElementById('themeToggleButton').addEventListener('click', function () {
+  // Toggle dark class on the body element
+  document.body.classList.toggle('dark');
+});
+
+// Changelog button functionality
+document.getElementById('changelogButton').addEventListener('click', function () {
+  // Open changelog in a new tab
+  window.open('https://www.bacusmoa.com/artist', '_blank');
+});
+
+
 canvas.addEventListener('mouseup', () => {
   if (isDrawing) {
     actions.push(currentStroke);
