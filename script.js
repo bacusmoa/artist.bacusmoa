@@ -104,9 +104,11 @@ undoButton.addEventListener("click", () => {
     imageData.onload = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(imageData, 0, 0);
+      saveCanvas();
     };
   }
 });
+
 
 const clearCanvasButton = document.getElementById("clearCanvasButton");
 clearCanvasButton.addEventListener("click", () => {
@@ -142,3 +144,4 @@ function loadCanvas() {
 }
 
 window.addEventListener("load", loadCanvas);
+
