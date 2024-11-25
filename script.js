@@ -5,12 +5,10 @@ let lastX = 0;
 let lastY = 0;
 let brushColor = "#000000";
 let brushSize = 5;
-let undoStack = [];
 
 function resizeCanvas() {
   canvas.width = canvas.offsetWidth;
   canvas.height = canvas.offsetHeight;
-  loadCanvas();
 }
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
@@ -30,13 +28,7 @@ function getPointerPosition(event) {
   };
 }
 
-function saveCanvasState() {
-  undoStack.push(canvas.toDataURL());
-  if (undoStack.length > 20) undoStack.shift();
-}
-
 function startDrawing(event) {
-  saveCanvasState();
   isDrawing = true;
   const { x, y } = getPointerPosition(event);
   lastX = x;
@@ -46,7 +38,6 @@ function startDrawing(event) {
 function stopDrawing() {
   isDrawing = false;
   ctx.beginPath();
-  saveCanvas();
 }
 
 function draw(event) {
@@ -56,7 +47,6 @@ function draw(event) {
   ctx.lineWidth = brushSize;
   ctx.lineCap = "round";
   ctx.strokeStyle = brushColor;
-
   ctx.beginPath();
   ctx.moveTo(lastX, lastY);
   ctx.lineTo(x, y);
@@ -96,6 +86,13 @@ colorPickerSwatch.addEventListener("click", () => {
   });
 });
 
+let undoStack = [];
+function saveCanvasState() {
+  undoStack.push(canvas.toDataURL());
+  if (undoStack.length > 20) undoStack.shift();
+}
+canvas.addEventListener("mousedown", saveCanvasState);
+
 const undoButton = document.getElementById("undoButton");
 undoButton.addEventListener("click", () => {
   if (undoStack.length > 0) {
@@ -104,17 +101,14 @@ undoButton.addEventListener("click", () => {
     imageData.onload = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(imageData, 0, 0);
-      saveCanvas();
     };
   }
 });
-
 
 const clearCanvasButton = document.getElementById("clearCanvasButton");
 clearCanvasButton.addEventListener("click", () => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   undoStack = [];
-  saveCanvas();
 });
 
 const themeToggleButton = document.getElementById("themeToggleButton");
@@ -126,22 +120,3 @@ const changelogButton = document.getElementById("changelogButton");
 changelogButton.addEventListener("click", () => {
   window.location.href = "https://www.bacusmoa.com/artist";
 });
-
-function saveCanvas() {
-  const canvasData = canvas.toDataURL();
-  localStorage.setItem("savedCanvas", canvasData);
-}
-
-function loadCanvas() {
-  const savedCanvas = localStorage.getItem("savedCanvas");
-  if (savedCanvas) {
-    const img = new Image();
-    img.src = savedCanvas;
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0);
-    };
-  }
-}
-
-window.addEventListener("load", loadCanvas);
-
