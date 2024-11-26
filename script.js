@@ -55,14 +55,17 @@ function draw(event) {
   lastY = y;
 }
 
-canvas.addEventListener("mousedown", startDrawing);
+canvas.addEventListener("mousedown", (event) => {
+  saveCanvasState(); // Save state for mouse
+  startDrawing(event);
+});
 canvas.addEventListener("mousemove", draw);
 canvas.addEventListener("mouseup", stopDrawing);
 canvas.addEventListener("mouseout", stopDrawing);
 
 canvas.addEventListener("touchstart", (event) => {
+  saveCanvasState(); // Save state for touch
   startDrawing(event);
-  saveCanvasState(); // Save canvas state for touch interactions
 });
 canvas.addEventListener("touchmove", (event) => draw(event));
 canvas.addEventListener("touchend", stopDrawing);
@@ -94,7 +97,6 @@ function saveCanvasState() {
   undoStack.push(canvas.toDataURL());
   if (undoStack.length > 20) undoStack.shift();
 }
-canvas.addEventListener("mousedown", saveCanvasState);
 
 const undoButton = document.getElementById("undoButton");
 undoButton.addEventListener("click", () => {
