@@ -60,7 +60,10 @@ canvas.addEventListener("mousemove", draw);
 canvas.addEventListener("mouseup", stopDrawing);
 canvas.addEventListener("mouseout", stopDrawing);
 
-canvas.addEventListener("touchstart", (event) => startDrawing(event));
+canvas.addEventListener("touchstart", (event) => {
+  startDrawing(event);
+  saveCanvasState(); // Save canvas state for touch interactions
+});
 canvas.addEventListener("touchmove", (event) => draw(event));
 canvas.addEventListener("touchend", stopDrawing);
 
